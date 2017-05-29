@@ -262,7 +262,7 @@ def esquinas_capturadas(board, player_id):
         total2 += 1
     return total, total2
 
-def min_play(board, player_id, curr_depth, max_depht):
+def min_play(board, player_id, curr_depth, max_depht, best_max, best_min):
     """
     encuentra la mejor jugada con el tablero actual para el jugador
     que quiere minimizar el score de su oponente
@@ -280,16 +280,22 @@ def min_play(board, player_id, curr_depth, max_depht):
     best_move = 0
     for move in pos_moves:
         new_board = apply_move(board, move, player_id)
-        new_score = minimax(new_board, oponente, True, curr_depth+1, max_depht)
+        new_score = minimax(new_board, oponente, True, curr_depth+1, max_depht, best_max, best_min)
         if new_score < best_score:
             best_score = new_score
             best_move = move
+            if best_score < best_min:
+                if curr_depth < 1:
+                    return best_move
+                else:
+                    return best_score
+            best_min = min(best_min, best_score)
     if curr_depth < 1:
         return best_move
     else:
         return best_score
 
-def max_play(board, player_id, curr_depth, max_depht):
+def max_play(board, player_id, curr_depth, max_depht, best_max, best_min):
     """
     encuentra la mejor jugada con el tablero actual para el jugador
     que quiere maximizar el score de su oponente
@@ -307,10 +313,16 @@ def max_play(board, player_id, curr_depth, max_depht):
     best_move = 0
     for move in pos_moves:
         new_board = apply_move(board, move, player_id)
-        new_score = minimax(new_board, oponente, False, curr_depth+1, max_depht)
+        new_score = minimax(new_board, oponente, False, curr_depth+1, max_depht, best_max, best_min)
         if new_score > best_score:
             best_score = new_score
             best_move = move
+            if best_score > best_max:
+                if curr_depth < 1:
+                    return best_move
+                else:
+                    return best_score
+            best_max = max(best_max, best_score)
     if curr_depth < 1:
         return best_move
     else:
@@ -318,7 +330,7 @@ def max_play(board, player_id, curr_depth, max_depht):
 
 
 
-def minimax(board, player_id, jugada, curr_depth, max_depht):
+def minimax(board, player_id, jugada, curr_depth, max_depht, best_max=MENINF, best_min=MASINF):
     """
     algoritmo de IA
     """
@@ -329,9 +341,9 @@ def minimax(board, player_id, jugada, curr_depth, max_depht):
         return  board_score(board, player_id)
 
     if jugada:
-        return max_play(board, player_id, curr_depth, max_depht)
+        return max_play(board, player_id, curr_depth, max_depht, best_max, best_min)
     else:
-        return min_play(board, player_id, curr_depth, max_depht)
+        return min_play(board, player_id, curr_depth, max_depht, best_max, best_min)
 
 def board_score(board, player_id):
     """
@@ -510,35 +522,22 @@ def onok():
 
 def elready(data):
     """
-    funcion que manda el siguiente tiro
+    funcion que manda el siguiente tiro escogido
+    en base a minimax
     """
-    """pos_tiros = get_possible_moves(data['board'], data['player_turn_id'])
-    if len(pos_tiros) < 1:
-        print 'no hay tiros validos'
-        print data['player_turn_id']
-        raw_input('seguir\n')
-        tiro = random.randint(0, 63)
-    else:
-        maxi = -100
-        tiro_t = pos_tiros[0]
-        for tiro in pos_tiros:
-            tmp = board_score(apply_move(data['board'], tiro, data['player_turn_id']), data['player_turn_id'])[0]
-            if tmp > maxi:
-                maxi = tmp
-                tiro_t = tiro
-    """
-    #tiro_t = minimax2(data['board'], data['player_turn_id'], True, 3, 0, 0)
-    tiro_t = minimax(data['board'], data['player_turn_id'], True, 0, 2)
-        #rand = random.randint(0, len(pos_tiros)-1)
-        #tiro_t = pos_tiros[rand]
-    s.emit('play', {'tournament_id': TID, 'player_turn_id': data['player_turn_id'], 'game_id': data['game_id'], 'movement': tiro_t})
+    my_id = data['player_turn_id']
+    g_id = data['game_id']
+    tiro_t = minimax(data['board'], my_id, True, 0, 5)
+    s.emit('play', {'tournament_id': TID, 'player_turn_id': my_id, 'game_id': g_id, 'movement': tiro_t})
 
 
 def elfinish(data):
     """
     funcion que pone en espera para el siguiente juego
     """
-    s.emit('player_ready', {'tournament_id': TID, 'player_turn_id': data['player_turn_id'], 'game_id': data['game_id']})
+    my_id = data['player_turn_id']
+    g_id = data['game_id']
+    s.emit('player_ready', {'tournament_id': TID, 'player_turn_id': my_id, 'game_id': g_id})
     print 'terminado ', data['game_id']
 
 
