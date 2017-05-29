@@ -1,7 +1,10 @@
 import random
 import time
 import socketIO_client
-#s = socketIO_client.SocketIO('10.226.186.253', 3000)
+
+TID = 12
+SAMUEL = '192.168.1.111'
+LOCAL = '192.168.0.100'
 
 
 INICIAL = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 1, 0, 0, 0, 0, 0, 0, 1, 2, 0, 0, 0, 0, 0, 0, 0,
@@ -11,176 +14,8 @@ SEGUNDO = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
 BASE_HASH = hash(''.join(str(e) for e in INICIAL))
 MOVS_INICIALES = [19, 26, 37, 44]
 
-def get_possible_moves(tablero_lineal, player_id):
-    if player_id == 1:
-        oponente = 2
-    else:
-        oponente = 1
-    #print tablero_lineal
-    board = convert_to_square(tablero_lineal)
-    #print board
-    #revisar si el tablero es el inicial
-
-
-    movs = []
-    # revisar movimientos hacia arriba
-    for i in range(8):
-        #print movs
-        for j in range(8):
-            # se revisa todo el tablero
-            # para cada ficha que tenemos hay que considerar
-            # sus posibles movimientos (8)
-            #print i,j
-            actual = board[i][j]
-
-            if actual == player_id:
-                # ARRIBA
-                if i > 0:
-                    pos_actual = i - 1
-                    while pos_actual > -1:
-                        sig_ficha = board[pos_actual][j]
-
-                        if sig_ficha < 1:
-                            if pos_actual < i-1:
-                                #print 'hay tiro arriba'
-                                movs.append((pos_actual, j))
-                            pos_actual = -1
-                        elif sig_ficha == oponente:
-                            pos_actual = pos_actual - 1
-                        else:
-                            #print 'fichas del mismo en {}{}'.format(i, pos_actual)
-                            pos_actual = -1
-
-                #ABAJO
-                if i < 7:
-                    pos_actual = i + 1
-                    while pos_actual < 8:
-                        sig_ficha = board[pos_actual][j]
-
-                        if sig_ficha < 1:
-                            if pos_actual > i+1:
-                                #print 'hay tiro abajo'
-                                movs.append((pos_actual, j))
-                            pos_actual = 8
-                        elif sig_ficha == oponente:
-                            pos_actual = pos_actual + 1
-                        else:
-                            #print 'abajo igual'
-                            pos_actual = 8
-
-                # DIAGONAL ARRIBA-IZQUIERDA
-                if i > 0 and j > 0:
-                    fila = i - 1
-                    columna = j - 1
-                    while fila > -1 and columna >= 0:
-                        sig_ficha = board[fila][columna]
-
-                        if sig_ficha < 1:
-                            if fila < i-1:
-                                #print 'hay tiro dARI'
-                                movs.append((fila, columna))
-                            fila = -1
-                        elif sig_ficha == oponente:
-                            fila = fila - 1
-                            columna = columna - 1
-                        else:
-                            #print 'DAI- igual'
-                            fila = -1
-
-                # DIAGONAL ARRIBA-DERECHA
-                if i > 0 and j < 7:
-                    fila = i - 1
-                    columna = j + 1
-                    while fila > -1 and columna < 8:
-                        sig_ficha = board[fila][columna]
-
-                        if sig_ficha < 1:
-                            if fila < i-1 and columna > j+1:
-                                #print 'hay tiro dARD'
-                                movs.append((fila, columna))
-                            fila = -1
-                        elif sig_ficha == oponente:
-                            fila = fila - 1
-                            columna = columna + 1
-                        else:
-                            #print 'DAD- igual'
-                            fila = -1
-
-                #DIAGONAL ABAJO-IZQUIERDA
-                if i < 7 and j:
-                    fila = i + 1
-                    columna = j - 1
-                    while fila < 8 and columna > -1:
-                        sig_ficha = board[fila][columna]
-
-                        if sig_ficha < 1:
-                            if fila > i+1 and columna < j-1:
-                                #print 'hay tiro dABI'
-                                movs.append((fila, columna))
-                            columna = -1
-                        elif sig_ficha == oponente:
-                            fila = fila + 1
-                            columna = columna - 1
-                        else:
-                            #print 'DAbI- igual'
-                            columna = -1
-                #DIAGONAL ABAJO-DERECHA
-                if i < 7 and j < 7:
-                    fila = i + 1
-                    columna = j + 1
-                    while fila < 8 and columna < 8:
-                        sig_ficha = board[fila][columna]
-
-                        if sig_ficha < 1:
-                            if fila > i+1:
-                                #print 'hay tiro dAbD'
-                                movs.append((fila, columna))
-                            fila = 8
-                        elif sig_ficha == oponente:
-                            fila = fila + 1
-                            columna = columna + 1
-                        else:
-                            #print 'DAbD- igual'
-                            fila = 8
-
-                #IZQUIERDA
-                if j > 0:
-                    columna = j - 1
-                    while columna > -1:
-                        sig_ficha = board[i][columna]
-
-                        if sig_ficha < 1:
-                            movs.append((i, columna))
-                            if columna < j-1:
-                                pass
-                                #print 'hay tiro izq'
-                               
-                            columna = -1
-                        elif sig_ficha == oponente:
-                            columna = columna - 1
-                        else:
-                            columna = -1
-
-                #DERECHA
-                if j < 7:
-                    columna = j + 1
-                    while columna < 8:
-                        sig_ficha = board[i][columna]
-
-                        if sig_ficha < 1:
-                            if columna > j+1:
-                                #print 'hay tiro der'
-                                movs.append((i, columna))
-                            columna = 8
-                        elif sig_ficha == oponente:
-                           # print columna
-                            columna = columna + 1
-                        else:
-                            columna = 8
-
-
-    #print 'YA TERMINADO'
-    return movs   
+MASINF = 5000
+MENINF = -5000
 
 def convert_to_square(board):
     tablero = []
@@ -189,18 +24,342 @@ def convert_to_square(board):
         del board[0:8]
     return tablero
 
+def get_possible_moves(board, player_id):
+    if player_id == 1:
+        oponente = 2
+    else:
+        oponente = 1
+    #revisar si el tablero es el inicial
 
-def minimax(state, turn, alpha, beta):
+
+    movs = []
+
+    for posicion in range(len(board)):
+        pieza = board[posicion]
+        if pieza == player_id:
+            #print posicion
+            #print board
+            #print len(board)
+            #arriba
+            if posicion > 7: #la primera fila no se revisa para arriba
+                pos_actual = posicion - 8
+
+                while pos_actual > -1:
+                    sig_ficha = board[pos_actual]
+                    if sig_ficha < 1: # es un espacio vacio
+                        if pos_actual < posicion-8:
+                            movs.append(pos_actual)
+                        pos_actual = -1
+                    elif sig_ficha == oponente:
+                        pos_actual -= 8
+                    else:
+                        pos_actual = -1
+
+
+            # diagonal arriba izquierda
+            if posicion > 7 and posicion%8 > 0: # el modulo nos dice posicion en la fila
+                pos_actual = posicion - 9
+                fila = pos_actual/8
+                columna = pos_actual%8
+                while fila > -1 and columna >= 0:
+                    sig_ficha = board[pos_actual]
+                    if sig_ficha < 1:
+                        if pos_actual < posicion-9:
+                            movs.append(pos_actual)
+                        fila = -1
+                    elif sig_ficha == oponente:
+                        fila = fila - 1
+                        columna = columna - 1
+                        pos_actual = pos_actual -9
+                    else:
+                        fila = -1
+
+
+            # diagonal arriba derecha
+            if posicion > 7 and posicion%8 < 7:
+                pos_actual = posicion -7
+                fila = pos_actual/8
+                columna = pos_actual%8
+                while fila > -1 and columna < 8:
+                    sig_ficha = board[pos_actual]
+                    if sig_ficha < 1:
+                        if pos_actual < posicion-7:
+                            movs.append(pos_actual)
+                        fila = -1
+                    elif sig_ficha == oponente:
+                        fila = fila - 1
+                        columna = columna + 1
+                        pos_actual = pos_actual - 7
+                    else:
+                        fila = -1
+
+            # izquierda
+            if posicion%8 > 0:
+                pos_actual = posicion - 1
+                stopper = posicion - posicion%8
+                while pos_actual > stopper-1:
+                    sig_ficha = board[pos_actual]
+                    if sig_ficha < 1:
+                        if pos_actual < posicion-1:
+                            movs.append(pos_actual)
+                        pos_actual = stopper-1
+                    elif sig_ficha == oponente:
+                        pos_actual -= 1
+                    else:
+                        pos_actual = stopper-1
+
+            #derecha
+            if posicion%8 < 7:
+                #print posicion
+                pos_actual = posicion + 1
+                stopper = posicion + (8 - (posicion%8))
+                while pos_actual < stopper:
+                    #print pos_actual
+                    #print '--'
+                    sig_ficha = board[pos_actual]
+                    if sig_ficha < 1:
+                        if pos_actual > posicion+1:
+                            movs.append(pos_actual)
+                        pos_actual = stopper+1
+                    elif sig_ficha == oponente:
+                        pos_actual += 1
+                    else:
+                        pos_actual = stopper+1
+
+            #abajo
+            if posicion/8 < 7:
+                pos_actual = posicion + 8
+                while pos_actual < 64:
+                    sig_ficha = board[pos_actual]
+                    if sig_ficha < 1:
+                        if pos_actual > posicion+8:
+                            movs.append(pos_actual)
+                        pos_actual = 64
+                    elif sig_ficha == oponente:
+                        pos_actual += 8
+                    else:
+                        pos_actual = 64
+
+            # diagonal abajo izquierda
+            if posicion/8 < 7 and posicion%8 > 0:
+                pos_actual = posicion + 7
+                fila = pos_actual/8
+                columna = pos_actual%8
+                while fila < 8 and columna > -1:
+                    sig_ficha = board[pos_actual]
+                    if sig_ficha < 1:
+                        if pos_actual > posicion+7:
+                            movs.append(pos_actual)
+                        columna = -1
+                    elif sig_ficha == oponente:
+                        fila = fila + 1
+                        columna = columna - 1
+                        pos_actual = pos_actual + 7
+                    else:
+                        columna = -1
+
+
+            # diagonal abajo derecha
+            if posicion/8 < 7 and posicion%8 < 7:
+                pos_actual = posicion + 9
+                fila = pos_actual/8
+                columna = pos_actual%8
+                while fila < 8 and columna < 8:
+                    sig_ficha = board[pos_actual]
+                    if sig_ficha < 1:
+                        if pos_actual > posicion+9:
+                            movs.append(pos_actual)
+                        fila = 8
+                    elif sig_ficha == oponente:
+                        fila = fila + 1
+                        columna = columna + 1
+                        pos_actual = pos_actual + 9
+                    else:
+                        #print 'DAbD- igual'
+                        fila = 8
+
+
+
+    return movs
+def minimax(board, player_id, tipo, alpha, beta, current_depth):
+    """
+    :param board: array del tablero
+    :param tipo: booleano true->max; false->min
+    :param alpha: depth max a revisar del arbol
+    :param beta: valor encontrado en los hermanos
+    """
     #revisar si el juego ya esta finalizado
-    if 0 not in state:
+    if 0 not in board:
+        return board_score(board)
+
+    n_board = board[:]
+    # quiero maximizar el score del siguiente turno
+    if tipo:
+        ps_moves = get_possible_moves(n_board, player_id)
+        for move in ps_moves:
+            #aplicar las heuristicas de control para el tablero actual
+            best_score = MASINF
+            n_board = apply_move(n_board, move, player_id)
+
         pass
-    pass
+    # quiero minimizar el score del siguiente turno
+    else:
+        pass
 
 def min_play():
     pass
 
 def max_play():
     pass
+
+def board_score(board):
+    pass
+
+def apply_move(board, piece, player_id):
+    if player_id == 1:
+        oponente = 2
+    else:
+        oponente = 1
+
+    n_board = board[:]
+    tiro = piece[0]*8 + piece[1]
+    cont_arr = 0
+    cont_aba = 0
+    cont_izq = 0
+    cont_der = 0
+    cont_darrizq = 0
+    cont_darrder = 0
+    cont_dabaizq = 0
+    cont_dabader = 0
+    # revisar fichas hacia arriba
+    if tiro > 7: #la primera fila no se revisa para arriba
+        pos_actual = tiro - 8
+        sig_ficha = board[pos_actual]
+        while pos_actual > -1:
+            if sig_ficha < 1: # es un espacio vacio
+                pos_actual = -1
+                cont_arr = 0
+            elif sig_ficha == oponente:
+                cont_arr += 1
+                pos_actual -= 8
+            else:
+                pos_actual = -1
+        for i in range(cont_arr):
+            n_board[tiro - 8*(i+1)] = player_id
+
+    # diagonal arriba izquierda
+    if tiro > 7 and tiro%8 > 0: # el modulo nos dice posicion en la fila
+        pos_actual = tiro - 9
+        sig_ficha = board[pos_actual]
+        while pos_actual%8 > 0:
+            if sig_ficha < 1:
+                pos_actual = 0
+                cont_darrizq = 0
+            elif sig_ficha == oponente:
+                cont_darrizq += 1
+                pos_actual -= 9
+            else:
+                pos_actual = 0
+        for i in range(cont_darrizq):
+            n_board[tiro - 9*(i+1)] = player_id
+
+    # diagonal arriba derecha
+    if tiro > 7 and tiro%8 < 7:
+        pos_actual = tiro -7
+        sig_ficha = board[pos_actual]
+        while pos_actual%8 < 7:
+            if sig_ficha < 1:
+                pos_actual = 7
+                cont_darrder = 0
+            elif sig_ficha == oponente:
+                cont_darrder += 1
+                pos_actual -= 7
+            else:
+                pos_actual = 7
+        for i in range(cont_darrder):
+            n_board[tiro - 7*(i+1)] = player_id
+
+    # izquierda
+    if tiro%8 > 0:
+        pos_actual = tiro - 1
+        sig_ficha = board[pos_actual]
+        while pos_actual%8 > 0:
+            if sig_ficha < 1:
+                pos_actual = 0
+                cont_izq = 0
+            elif sig_ficha == oponente:
+                cont_izq += 1
+            else:
+                pos_actual = 0
+        for i in range(cont_izq):
+            n_board[tiro - (i+1)] = player_id
+
+    #derecha
+    if tiro%8 < 7:
+        pos_actual = tiro + 1
+        sig_ficha = board[pos_actual]
+        while pos_actual%8 < 7:
+            if sig_ficha < 1:
+                pos_actual = 7
+                cont_der = 0
+            elif sig_ficha == oponente:
+                cont_der += 1
+                pos_actual += 1
+            else:
+                pos_actual = 7
+        for i in range(cont_der):
+            n_board[tiro + (i+1)] = player_id
+
+    #abajo
+    if tiro/8 < 7:
+        pos_actual = tiro + 8
+        sig_ficha = board[pos_actual]
+        while pos_actual < 56:
+            if sig_ficha < 1:
+                pos_actual = 0
+                cont_aba = 0
+            elif sig_ficha == oponente:
+                cont_aba += 1
+                pos_actual += 8
+            else:
+                pos_actual = 56
+        for i in range(cont_aba):
+            n_board[tiro + 8*(i+1)] = player_id
+
+    # diagonal abajo izquierda
+    if tiro/8 < 7 and tiro%8 > 0:
+        pos_actual = tiro + 7
+        sig_ficha = board[pos_actual]
+        while pos_actual%8 > 0:
+            if sig_ficha < 1:
+                pos_actual = 0
+                cont_dabaizq = 0
+            elif sig_ficha == oponente:
+                cont_dabaizq += 1
+                pos_actual += 7
+            else:
+                pos_actual = 0
+        for i in range(cont_dabaizq):
+            n_board[tiro + 7*(i+1)] = player_id
+
+    # diagonal abajo derecha
+    if tiro/8 < 7 and tiro%8 < 7:
+        pos_actual = tiro + 9
+        sig_ficha = board[pos_actual]
+        while pos_actual%8 < 7:
+            if sig_ficha < 1:
+                cont_dabader = 0
+                pos_actual = 7
+            elif sig_ficha == oponente:
+                cont_dabader += 1
+                pos_actual += 9
+            else:
+                pos_actual = 7
+        for i in range(cont_dabader):
+            n_board[tiro + 9*(i+1)] = player_id
+
+    return n_board
+
 """
 gtt = convert_to_square(list(INICIAL))
 #print INICIAL
@@ -215,9 +374,8 @@ alg = get_possible_moves(INICIAL, 1)
 print alg
 print alg[0][0]*8 + alg[0][1]
 """
-TID = 12
-#192.168.1.111 samuel
-s = socketIO_client.SocketIO('192.168.0.100', 3000)
+
+s = socketIO_client.SocketIO(LOCAL, 3000)
 s.connect()
 s.emit('signin', {'user_name': "chiroy", 'tournament_id': TID, 'user_role': 'player'})
 
@@ -225,7 +383,8 @@ def onok():
     print 'exito en el signin'
 
 def elready(data):
-    t2 = data['board'][:]
+    #t2 = data['board'][:]
+    #para_ref = convert_to_square(t2)
     pos_tiros = get_possible_moves(data['board'], data['player_turn_id'])
     #print pos_tiros
     if len(pos_tiros) < 1:
@@ -236,7 +395,8 @@ def elready(data):
         tiro = random.randint(0, 63)
     else:
         rand = random.randint(0, len(pos_tiros)-1)
-        tiro = pos_tiros[rand][0]*8 + pos_tiros[rand][1]
+        tiro = pos_tiros[rand]
+        #tiro = pos_tiros[rand][0]*8 + pos_tiros[rand][1]
     s.emit('play', {'tournament_id': TID, 'player_turn_id': data['player_turn_id'], 'game_id': data['game_id'], 'movement': tiro})
     #print tiro
     #print data
