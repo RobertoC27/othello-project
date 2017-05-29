@@ -180,7 +180,7 @@ def get_possible_moves(board, player_id):
 
 
 
-    return movs
+    return list(set(movs))
 def minimax(board, player_id, tipo, alpha, beta, current_depth):
     """
     :param board: array del tablero
@@ -190,7 +190,7 @@ def minimax(board, player_id, tipo, alpha, beta, current_depth):
     """
     #revisar si el juego ya esta finalizado
     if 0 not in board:
-        return board_score(board)
+        return board_score(board, player_id)
 
     n_board = board[:]
     # quiero maximizar el score del siguiente turno
@@ -212,8 +212,21 @@ def min_play():
 def max_play():
     pass
 
-def board_score(board):
-    pass
+def board_score(board, player_id):
+    """
+    funcion que pone calcula el punteo del tablero
+    """
+    if player_id == 1:
+        oponente = 2
+    else:
+        oponente = 1
+    marcador = 0
+    for pieza in board:
+        if pieza == player_id:
+            marcador += 1
+        elif pieza == oponente:
+            marcador -= 1
+    return marcador
 
 def apply_move(board, piece, player_id):
     if player_id == 1:
@@ -222,7 +235,7 @@ def apply_move(board, piece, player_id):
         oponente = 1
 
     n_board = board[:]
-    tiro = piece[0]*8 + piece[1]
+    tiro = piece
     cont_arr = 0
     cont_aba = 0
     cont_izq = 0
@@ -234,8 +247,8 @@ def apply_move(board, piece, player_id):
     # revisar fichas hacia arriba
     if tiro > 7: #la primera fila no se revisa para arriba
         pos_actual = tiro - 8
-        sig_ficha = board[pos_actual]
         while pos_actual > -1:
+            sig_ficha = board[pos_actual]
             if sig_ficha < 1: # es un espacio vacio
                 pos_actual = -1
                 cont_arr = 0
@@ -250,8 +263,8 @@ def apply_move(board, piece, player_id):
     # diagonal arriba izquierda
     if tiro > 7 and tiro%8 > 0: # el modulo nos dice posicion en la fila
         pos_actual = tiro - 9
-        sig_ficha = board[pos_actual]
         while pos_actual%8 > 0:
+            sig_ficha = board[pos_actual]
             if sig_ficha < 1:
                 pos_actual = 0
                 cont_darrizq = 0
@@ -266,8 +279,8 @@ def apply_move(board, piece, player_id):
     # diagonal arriba derecha
     if tiro > 7 and tiro%8 < 7:
         pos_actual = tiro -7
-        sig_ficha = board[pos_actual]
         while pos_actual%8 < 7:
+            sig_ficha = board[pos_actual]
             if sig_ficha < 1:
                 pos_actual = 7
                 cont_darrder = 0
@@ -282,13 +295,14 @@ def apply_move(board, piece, player_id):
     # izquierda
     if tiro%8 > 0:
         pos_actual = tiro - 1
-        sig_ficha = board[pos_actual]
         while pos_actual%8 > 0:
+            sig_ficha = board[pos_actual]
             if sig_ficha < 1:
                 pos_actual = 0
                 cont_izq = 0
             elif sig_ficha == oponente:
                 cont_izq += 1
+                pos_actual -= 1
             else:
                 pos_actual = 0
         for i in range(cont_izq):
@@ -297,8 +311,8 @@ def apply_move(board, piece, player_id):
     #derecha
     if tiro%8 < 7:
         pos_actual = tiro + 1
-        sig_ficha = board[pos_actual]
         while pos_actual%8 < 7:
+            sig_ficha = board[pos_actual]
             if sig_ficha < 1:
                 pos_actual = 7
                 cont_der = 0
@@ -313,10 +327,10 @@ def apply_move(board, piece, player_id):
     #abajo
     if tiro/8 < 7:
         pos_actual = tiro + 8
-        sig_ficha = board[pos_actual]
         while pos_actual < 56:
+            sig_ficha = board[pos_actual]
             if sig_ficha < 1:
-                pos_actual = 0
+                pos_actual = 56
                 cont_aba = 0
             elif sig_ficha == oponente:
                 cont_aba += 1
@@ -329,8 +343,8 @@ def apply_move(board, piece, player_id):
     # diagonal abajo izquierda
     if tiro/8 < 7 and tiro%8 > 0:
         pos_actual = tiro + 7
-        sig_ficha = board[pos_actual]
-        while pos_actual%8 > 0:
+        while pos_actual%8 > 0 and pos_actual/8 < 7:
+            sig_ficha = board[pos_actual]
             if sig_ficha < 1:
                 pos_actual = 0
                 cont_dabaizq = 0
@@ -339,14 +353,15 @@ def apply_move(board, piece, player_id):
                 pos_actual += 7
             else:
                 pos_actual = 0
+
         for i in range(cont_dabaizq):
             n_board[tiro + 7*(i+1)] = player_id
 
     # diagonal abajo derecha
     if tiro/8 < 7 and tiro%8 < 7:
         pos_actual = tiro + 9
-        sig_ficha = board[pos_actual]
-        while pos_actual%8 < 7:
+        while pos_actual%8 < 7 and pos_actual/8 < 7:
+            sig_ficha = board[pos_actual]
             if sig_ficha < 1:
                 cont_dabader = 0
                 pos_actual = 7
@@ -355,53 +370,51 @@ def apply_move(board, piece, player_id):
                 pos_actual += 9
             else:
                 pos_actual = 7
+
         for i in range(cont_dabader):
             n_board[tiro + 9*(i+1)] = player_id
 
     return n_board
 
-"""
-gtt = convert_to_square(list(INICIAL))
-#print INICIAL
-#gtt[2][3] = 5
-#gtt[3][2] = 5
-#gtt[4][5] = 5
-#gtt[5][4] = 5
-for el in gtt:
-    print el, '\n'
-
-alg = get_possible_moves(INICIAL, 1)
-print alg
-print alg[0][0]*8 + alg[0][1]
-"""
 
 s = socketIO_client.SocketIO(LOCAL, 3000)
 s.connect()
 s.emit('signin', {'user_name': "chiroy", 'tournament_id': TID, 'user_role': 'player'})
 
 def onok():
+    """
+    cuando el signing es exitoso para el torneo
+    """
     print 'exito en el signin'
 
 def elready(data):
-    #t2 = data['board'][:]
-    #para_ref = convert_to_square(t2)
+    """
+    funcion que manda el siguiente tiro
+    """
     pos_tiros = get_possible_moves(data['board'], data['player_turn_id'])
-    #print pos_tiros
     if len(pos_tiros) < 1:
         print 'no hay tiros validos'
         print data['player_turn_id']
-        print t2
         raw_input('seguir\n')
         tiro = random.randint(0, 63)
     else:
-        rand = random.randint(0, len(pos_tiros)-1)
-        tiro = pos_tiros[rand]
-        #tiro = pos_tiros[rand][0]*8 + pos_tiros[rand][1]
-    s.emit('play', {'tournament_id': TID, 'player_turn_id': data['player_turn_id'], 'game_id': data['game_id'], 'movement': tiro})
-    #print tiro
-    #print data
+        maxi = -100
+        tiro_t = pos_tiros[0]
+        for tiro in pos_tiros:
+            tmp = board_score(apply_move(data['board'], tiro, data['player_turn_id']), data['player_turn_id'])
+            if tmp > maxi:
+                maxi = tmp
+                tiro_t = tiro
+
+        #rand = random.randint(0, len(pos_tiros)-1)
+        #tiro_t = pos_tiros[rand]
+    s.emit('play', {'tournament_id': TID, 'player_turn_id': data['player_turn_id'], 'game_id': data['game_id'], 'movement': tiro_t})
+
 
 def elfinish(data):
+    """
+    funcion que pone en espera para el siguiente juego
+    """
     s.emit('player_ready', {'tournament_id': TID, 'player_turn_id': data['player_turn_id'], 'game_id': data['game_id']})
     print 'terminado ', data['game_id']
 
