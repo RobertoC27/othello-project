@@ -24,7 +24,7 @@ def get_possible_moves(tablero_lineal, player_id):
 
     movs = []
     # revisar movimientos hacia arriba
-    for i in range(1,8):
+    for i in range(8):
         #print movs
         for j in range(8):
             # se revisa todo el tablero
@@ -37,19 +37,19 @@ def get_possible_moves(tablero_lineal, player_id):
                 # ARRIBA
                 if i > 0:
                     pos_actual = i - 1
-                    while pos_actual:
+                    while pos_actual > -1:
                         sig_ficha = board[pos_actual][j]
 
                         if sig_ficha < 1:
                             if pos_actual < i-1:
                                 #print 'hay tiro arriba'
                                 movs.append((pos_actual, j))
-                            pos_actual = 0
+                            pos_actual = -1
                         elif sig_ficha == oponente:
                             pos_actual = pos_actual - 1
                         else:
                             #print 'fichas del mismo en {}{}'.format(i, pos_actual)
-                            pos_actual = 0
+                            pos_actual = -1
 
                 #ABAJO
                 if i < 7:
@@ -72,58 +72,58 @@ def get_possible_moves(tablero_lineal, player_id):
                 if i > 0 and j > 0:
                     fila = i - 1
                     columna = j - 1
-                    while fila and columna >= 0:
+                    while fila > -1 and columna >= 0:
                         sig_ficha = board[fila][columna]
 
                         if sig_ficha < 1:
                             if fila < i-1:
                                 #print 'hay tiro dARI'
                                 movs.append((fila, columna))
-                            fila = 0
+                            fila = -1
                         elif sig_ficha == oponente:
                             fila = fila - 1
                             columna = columna - 1
                         else:
                             #print 'DAI- igual'
-                            fila = 0
+                            fila = -1
 
                 # DIAGONAL ARRIBA-DERECHA
                 if i > 0 and j < 7:
                     fila = i - 1
                     columna = j + 1
-                    while fila and columna < 8:
+                    while fila > -1 and columna < 8:
                         sig_ficha = board[fila][columna]
 
                         if sig_ficha < 1:
                             if fila < i-1 and columna > j+1:
                                 #print 'hay tiro dARD'
                                 movs.append((fila, columna))
-                            fila = 0
+                            fila = -1
                         elif sig_ficha == oponente:
                             fila = fila - 1
                             columna = columna + 1
                         else:
                             #print 'DAD- igual'
-                            fila = 0
+                            fila = -1
 
                 #DIAGONAL ABAJO-IZQUIERDA
                 if i < 7 and j:
                     fila = i + 1
                     columna = j - 1
-                    while fila < 8 and columna:
+                    while fila < 8 and columna > -1:
                         sig_ficha = board[fila][columna]
 
                         if sig_ficha < 1:
                             if fila > i+1 and columna < j-1:
                                 #print 'hay tiro dABI'
                                 movs.append((fila, columna))
-                            columna = 0
+                            columna = -1
                         elif sig_ficha == oponente:
                             fila = fila + 1
                             columna = columna - 1
                         else:
                             #print 'DAbI- igual'
-                            columna = 0
+                            columna = -1
                 #DIAGONAL ABAJO-DERECHA
                 if i < 7 and j < 7:
                     fila = i + 1
@@ -146,18 +146,20 @@ def get_possible_moves(tablero_lineal, player_id):
                 #IZQUIERDA
                 if j > 0:
                     columna = j - 1
-                    while columna:
+                    while columna > -1:
                         sig_ficha = board[i][columna]
 
                         if sig_ficha < 1:
+                            movs.append((i, columna))
                             if columna < j-1:
+                                pass
                                 #print 'hay tiro izq'
-                                movs.append((i, columna))
-                            columna = 0
+                               
+                            columna = -1
                         elif sig_ficha == oponente:
                             columna = columna - 1
                         else:
-                            columna = 0
+                            columna = -1
 
                 #DERECHA
                 if j < 7:
@@ -188,6 +190,17 @@ def convert_to_square(board):
     return tablero
 
 
+def minimax(state, turn, alpha, beta):
+    #revisar si el juego ya esta finalizado
+    if 0 not in state:
+        pass
+    pass
+
+def min_play():
+    pass
+
+def max_play():
+    pass
 """
 gtt = convert_to_square(list(INICIAL))
 #print INICIAL
@@ -203,6 +216,7 @@ print alg
 print alg[0][0]*8 + alg[0][1]
 """
 TID = 12
+#192.168.1.111 samuel
 s = socketIO_client.SocketIO('192.168.0.100', 3000)
 s.connect()
 s.emit('signin', {'user_name': "chiroy", 'tournament_id': TID, 'user_role': 'player'})
@@ -211,16 +225,21 @@ def onok():
     print 'exito en el signin'
 
 def elready(data):
+    t2 = data['board'][:]
     pos_tiros = get_possible_moves(data['board'], data['player_turn_id'])
     #print pos_tiros
     if len(pos_tiros) < 1:
+        print 'no hay tiros validos'
+        print data['player_turn_id']
+        print t2
+        raw_input('seguir\n')
         tiro = random.randint(0, 63)
     else:
         rand = random.randint(0, len(pos_tiros)-1)
         tiro = pos_tiros[rand][0]*8 + pos_tiros[rand][1]
     s.emit('play', {'tournament_id': TID, 'player_turn_id': data['player_turn_id'], 'game_id': data['game_id'], 'movement': tiro})
-    print tiro
-    print data
+    #print tiro
+    #print data
 
 def elfinish(data):
     s.emit('player_ready', {'tournament_id': TID, 'player_turn_id': data['player_turn_id'], 'game_id': data['game_id']})
