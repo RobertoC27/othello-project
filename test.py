@@ -2,6 +2,7 @@ import random
 import time
 import socketIO_client
 
+# heuristicas tomadas de https://github.com/kartikkukreja/blog-codes/blob/master/src/Heuristic%20Function%20for%20Reversi%20(Othello).cpp
 TID = 12
 SAMUEL = '192.168.1.111'
 LOCAL = '192.168.0.100'
@@ -14,10 +15,13 @@ SEGUNDO = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
 BASE_HASH = hash(''.join(str(e) for e in INICIAL))
 MOVS_INICIALES = [19, 26, 37, 44]
 
-MASINF = 5000
-MENINF = -5000
+MASINF = 5000000000
+MENINF = -500000000
 
 def convert_to_square(board):
+    """
+    devuelve el tablero en forma de matriz
+    """
     tablero = []
     for i in range(8):
         tablero.append(board[0:8])
@@ -25,6 +29,12 @@ def convert_to_square(board):
     return tablero
 
 def get_possible_moves(board, player_id):
+    """
+    obtiene los posibles movimientos del jugador
+    con el tablero actual
+    :param board: tablero en un array
+    :param player_id: numero del jugador
+    """
     if player_id == 1:
         oponente = 2
     else:
@@ -260,7 +270,7 @@ def esquinas_capturadas(board, player_id):
         total += 1
     elif board[63] == oponente:
         total2 += 1
-    return total, total2
+    return total
 
 def min_play(board, player_id, curr_depth, max_depht, best_max, best_min):
     """
@@ -278,15 +288,19 @@ def min_play(board, player_id, curr_depth, max_depht, best_max, best_min):
     best_score = MASINF
     pos_moves = get_possible_moves(board, player_id)
     best_move = 0
+    esquinas_op = esquinas_capturadas(board, oponente)
     for move in pos_moves:
         new_board = apply_move(board, move, player_id)
         new_score = minimax(new_board, oponente, True, curr_depth+1, max_depht, best_max, best_min)
+        # aplicar las heuristicas
+        new_score = heuristica(new_board, player_id, new_score, esquinas_op)
+
         if new_score < best_score:
             best_score = new_score
             best_move = move
             if best_score < best_min:
                 if curr_depth < 1:
-                    return best_move
+                    pass
                 else:
                     return best_score
             best_min = min(best_min, best_score)
@@ -311,15 +325,18 @@ def max_play(board, player_id, curr_depth, max_depht, best_max, best_min):
     best_score = MENINF
     pos_moves = get_possible_moves(board, player_id)
     best_move = 0
+    esquinas_op = esquinas_capturadas(board, oponente)
     for move in pos_moves:
         new_board = apply_move(board, move, player_id)
         new_score = minimax(new_board, oponente, False, curr_depth+1, max_depht, best_max, best_min)
+
+        new_score = heuristica(new_board, player_id, new_score, esquinas_op)
         if new_score > best_score:
             best_score = new_score
             best_move = move
             if best_score > best_max:
                 if curr_depth < 1:
-                    return best_move
+                    pass
                 else:
                     return best_score
             best_max = max(best_max, best_score)
@@ -328,7 +345,89 @@ def max_play(board, player_id, curr_depth, max_depht, best_max, best_min):
     else:
         return best_score
 
+def heuristica(board, player_id, score, esq_anterior):
+    """
+    funcion heuristica que calcula el valor de
+    un tablero
+    """
+    if player_id == 1:
+        oponente = 2
+    else:
+        oponente = 1
 
+    #esquinas capturadas
+    nueva_esquina = esquinas_capturadas(board, player_id)
+    frv_esq = 2.5 * (nueva_esquina - esq_anterior)
+    # la movilidad del tablero
+    mis_movs = len(get_possible_moves(board, player_id))
+    sus_movs = len(get_possible_moves(board, oponente))
+    if mis_movs > sus_movs:
+        mobi = (10.0 * mis_movs)/float(mis_movs + sus_movs)
+    elif sus_movs > mis_movs:
+        mobi = -(10.0 * sus_movs)/float(mis_movs + sus_movs)
+    else:
+        mobi = 0
+
+    #cercania a las esquinas
+    mis_movs = sus_movs = 0
+    if board[0] != 0: #esquina arriba izquierda
+        if board[1] == player_id:
+            mis_movs += 1
+        elif board[1] == oponente:
+            sus_movs += 1
+        if board[8] == player_id:
+            mis_movs += 1
+        elif board[8] == oponente:
+            sus_movs += 1
+        if board[9] == player_id:
+            mis_movs += 1
+        elif board[9] == oponente:
+            sus_movs += 1
+
+    if board[7] != 0: # esquina arriba derecha
+        if board[6] == player_id:
+            mis_movs += 1
+        elif board[6] == oponente:
+            sus_movs += 1
+        if board[14] == player_id:
+            mis_movs += 1
+        elif board[14] == oponente:
+            sus_movs += 1
+        if board[15] == player_id:
+            mis_movs += 1
+        elif board[15] == oponente:
+            sus_movs += 1
+
+    if board[56] != 0: # esquina abajo izquierda
+        if board[48] == player_id:
+            mis_movs += 1
+        elif board[48] == oponente:
+            sus_movs += 1
+        if board[49] == player_id:
+            mis_movs += 1
+        elif board[49] == oponente:
+            sus_movs += 1
+        if board[57] == player_id:
+            mis_movs += 1
+        elif board[57] == oponente:
+            sus_movs += 1
+
+    if board[63] != 0: # esquina abajo derecha
+        if board[55] == player_id:
+            mis_movs += 1
+        elif board[55] == oponente:
+            sus_movs += 1
+        if board[62] == player_id:
+            mis_movs += 1
+        elif board[62] == oponente:
+            sus_movs += 1
+        if board[54] == player_id:
+            mis_movs += 1
+        elif board[54] == oponente:
+            sus_movs += 1
+    esq = -1.25 * (mis_movs - sus_movs)
+    new_score = score + (mobi) + (esq) + (frv_esq)
+    return new_score
 
 def minimax(board, player_id, jugada, curr_depth, max_depht, best_max=MENINF, best_min=MASINF):
     """
@@ -341,9 +440,9 @@ def minimax(board, player_id, jugada, curr_depth, max_depht, best_max=MENINF, be
         return  board_score(board, player_id)
 
     if jugada:
-        return max_play(board, player_id, curr_depth, max_depht, best_max, best_min)
+        return max_play(board[:], player_id, curr_depth, max_depht, best_max, best_min)
     else:
-        return min_play(board, player_id, curr_depth, max_depht, best_max, best_min)
+        return min_play(board[:], player_id, curr_depth, max_depht, best_max, best_min)
 
 def board_score(board, player_id):
     """
@@ -357,11 +456,15 @@ def board_score(board, player_id):
     for pieza in board:
         if pieza == player_id:
             marcador += 1
-        elif pieza == oponente:
-            marcador -= 1
+        #elif pieza == oponente:
+        #    marcador -= 1
     return marcador
 
 def apply_move(board, piece, player_id):
+    """
+    devuelve al tablero con las piezas
+    cambiadas por el tiro enviado
+    """
     if player_id == 1:
         oponente = 2
     else:
@@ -369,6 +472,7 @@ def apply_move(board, piece, player_id):
 
     n_board = board[:]
     tiro = piece
+    n_board[tiro] = player_id
     cont_arr = 0
     cont_aba = 0
     cont_izq = 0
