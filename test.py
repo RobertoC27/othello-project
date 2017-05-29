@@ -181,9 +181,9 @@ def get_possible_moves(board, player_id):
 
 
     return list(set(movs))
-def minimax(board, player_id, tipo, alpha, beta, current_depth):
+def minimax2(board, player_id, tipo, alpha, current_depth, beta):
     """
-    :param board: array del tablero
+    :param board: array que representa el tablero
     :param tipo: booleano true->max; false->min
     :param alpha: depth max a revisar del arbol
     :param beta: valor encontrado en los hermanos
@@ -191,26 +191,147 @@ def minimax(board, player_id, tipo, alpha, beta, current_depth):
     #revisar si el juego ya esta finalizado
     if 0 not in board:
         return board_score(board, player_id)
-
+    if player_id == 1:
+        oponente = 2
+    else:
+        oponente = 1
     n_board = board[:]
+
+    # ya tengo el maximo nivel revisado
+    if current_depth == alpha:
+        return board_score(board, player_id)
     # quiero maximizar el score del siguiente turno
     if tipo:
+        best_score = MENINF
         ps_moves = get_possible_moves(n_board, player_id)
+        best_move = 0
         for move in ps_moves:
             #aplicar las heuristicas de control para el tablero actual
-            best_score = MASINF
             n_board = apply_move(n_board, move, player_id)
-
-        pass
+            new_score = minimax2(n_board,oponente,False,alpha,current_depth+1,beta)
+            if new_score > best_score:
+                best_score = new_score
+                best_move = move
+        return best_score
     # quiero minimizar el score del siguiente turno
     else:
-        pass
+        best_score = MASINF
+        best_move = 0
+        ps_moves = get_possible_moves(n_board, player_id)
+        for move in ps_moves:
+            n_board = apply_move(n_board, move, player_id)
+            best_score = min(best_score, minimax2(n_board, oponente, True, alpha, current_depth+1, beta))
+        
 
-def min_play():
-    pass
+def num_fichas(board, player_id):
+    """
+    devuelve el numero de fichas de un jugador
+    """
+    total = 0
+    for pieza in board:
+        if pieza == player_id:
+            total += 1
+    return total
 
-def max_play():
-    pass
+def esquinas_capturadas(board, player_id):
+    """
+    devuelve cuantas de las esquinas del tablero
+    el jugador tiene en su poder
+    """
+    if player_id == 1:
+        oponente = 2
+    else:
+        oponente = 1
+    total = 0
+    total2 = 0
+    if board[0] == player_id:
+        total += 1
+    elif board[0] == oponente:
+        total2 += 1
+    if board[7] == player_id:
+        total += 1
+    elif board[7] == oponente:
+        total2 += 1
+    if board[56] == player_id:
+        total += 1
+    elif board[56] == oponente:
+        total2 += 1
+    if board[63] == player_id:
+        total += 1
+    elif board[63] == oponente:
+        total2 += 1
+    return total, total2
+
+def min_play(board, player_id, curr_depth, max_depht):
+    """
+    encuentra la mejor jugada con el tablero actual para el jugador
+    que quiere minimizar el score de su oponente
+    :param board: array del tablero
+    :param player_id: id del jugador que va a maximizar
+    :param curr_depth: nivel de recursion actual
+    :param max_depth: nivel maximo de recursion
+    """
+    if player_id == 1:
+        oponente = 2
+    else:
+        oponente = 1
+    best_score = MASINF
+    pos_moves = get_possible_moves(board, player_id)
+    best_move = 0
+    for move in pos_moves:
+        new_board = apply_move(board, move, player_id)
+        new_score = minimax(new_board, oponente, True, curr_depth+1, max_depht)
+        if new_score < best_score:
+            best_score = new_score
+            best_move = move
+    if curr_depth < 1:
+        return best_move
+    else:
+        return best_score
+
+def max_play(board, player_id, curr_depth, max_depht):
+    """
+    encuentra la mejor jugada con el tablero actual para el jugador
+    que quiere maximizar el score de su oponente
+    :param board: array del tablero
+    :param player_id: id del jugador que va a maximizar
+    :param curr_depth: nivel de recursion actual
+    :param max_depth: nivel maximo de recursion
+    """
+    if player_id == 1:
+        oponente = 2
+    else:
+        oponente = 1
+    best_score = MENINF
+    pos_moves = get_possible_moves(board, player_id)
+    best_move = 0
+    for move in pos_moves:
+        new_board = apply_move(board, move, player_id)
+        new_score = minimax(new_board, oponente, False, curr_depth+1, max_depht)
+        if new_score > best_score:
+            best_score = new_score
+            best_move = move
+    if curr_depth < 1:
+        return best_move
+    else:
+        return best_score
+
+
+
+def minimax(board, player_id, jugada, curr_depth, max_depht):
+    """
+    algoritmo de IA
+    """
+    if 0 not in board: # juego terminado
+        return board_score(board, player_id)
+
+    if curr_depth == max_depht: #maxima recursion alcanzada
+        return  board_score(board, player_id)
+
+    if jugada:
+        return max_play(board, player_id, curr_depth, max_depht)
+    else:
+        return min_play(board, player_id, curr_depth, max_depht)
 
 def board_score(board, player_id):
     """
@@ -391,7 +512,7 @@ def elready(data):
     """
     funcion que manda el siguiente tiro
     """
-    pos_tiros = get_possible_moves(data['board'], data['player_turn_id'])
+    """pos_tiros = get_possible_moves(data['board'], data['player_turn_id'])
     if len(pos_tiros) < 1:
         print 'no hay tiros validos'
         print data['player_turn_id']
@@ -401,11 +522,13 @@ def elready(data):
         maxi = -100
         tiro_t = pos_tiros[0]
         for tiro in pos_tiros:
-            tmp = board_score(apply_move(data['board'], tiro, data['player_turn_id']), data['player_turn_id'])
+            tmp = board_score(apply_move(data['board'], tiro, data['player_turn_id']), data['player_turn_id'])[0]
             if tmp > maxi:
                 maxi = tmp
                 tiro_t = tiro
-
+    """
+    #tiro_t = minimax2(data['board'], data['player_turn_id'], True, 3, 0, 0)
+    tiro_t = minimax(data['board'], data['player_turn_id'], True, 0, 2)
         #rand = random.randint(0, len(pos_tiros)-1)
         #tiro_t = pos_tiros[rand]
     s.emit('play', {'tournament_id': TID, 'player_turn_id': data['player_turn_id'], 'game_id': data['game_id'], 'movement': tiro_t})
