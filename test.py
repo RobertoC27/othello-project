@@ -3,9 +3,9 @@ import time
 import socketIO_client
 
 # heuristicas tomadas de https://github.com/kartikkukreja/blog-codes/blob/master/src/Heuristic%20Function%20for%20Reversi%20(Othello).cpp
-TID = 12
-SAMUEL = '192.168.1.111'
-LOCAL = '192.168.0.100'
+TID = 142857
+SAMUEL = '192.168.1.112'
+LOCAL = '192.168.43.179'
 
 
 INICIAL = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 1, 0, 0, 0, 0, 0, 0, 1, 2, 0, 0, 0, 0, 0, 0, 0,
@@ -359,73 +359,78 @@ def heuristica(board, player_id, score, esq_anterior):
     nueva_esquina = esquinas_capturadas(board, player_id)
     frv_esq = 2.5 * (nueva_esquina - esq_anterior)
     # la movilidad del tablero
-    mis_movs = len(get_possible_moves(board, player_id))
-    sus_movs = len(get_possible_moves(board, oponente))
-    if mis_movs > sus_movs:
-        mobi = (10.0 * mis_movs)/float(mis_movs + sus_movs)
-    elif sus_movs > mis_movs:
-        mobi = -(10.0 * sus_movs)/float(mis_movs + sus_movs)
+    if random.random() > 1:
+        mis_movs = len(get_possible_moves(board, player_id))
+        sus_movs = len(get_possible_moves(board, oponente))
+        if mis_movs > sus_movs:
+            mobi = (10.0 * mis_movs)/float(mis_movs + sus_movs)
+        elif sus_movs > mis_movs:
+            mobi = -(10.0 * sus_movs)/float(mis_movs + sus_movs)
+        else:
+            mobi = 0
     else:
         mobi = 0
-
     #cercania a las esquinas
-    mis_movs = sus_movs = 0
-    if board[0] != 0: #esquina arriba izquierda
-        if board[1] == player_id:
-            mis_movs += 1
-        elif board[1] == oponente:
-            sus_movs += 1
-        if board[8] == player_id:
-            mis_movs += 1
-        elif board[8] == oponente:
-            sus_movs += 1
-        if board[9] == player_id:
-            mis_movs += 1
-        elif board[9] == oponente:
-            sus_movs += 1
+    if random.random() > 1:
+        mis_movs = sus_movs = 0
+        if board[0] == 0: #esquina arriba izquierda
+            if board[1] == player_id:
+                mis_movs += 1
+            elif board[1] == oponente:
+                sus_movs += 1
+            if board[8] == player_id:
+                mis_movs += 1
+            elif board[8] == oponente:
+                sus_movs += 1
+            if board[9] == player_id:
+                mis_movs += 1
+            elif board[9] == oponente:
+                sus_movs += 1
 
-    if board[7] != 0: # esquina arriba derecha
-        if board[6] == player_id:
-            mis_movs += 1
-        elif board[6] == oponente:
-            sus_movs += 1
-        if board[14] == player_id:
-            mis_movs += 1
-        elif board[14] == oponente:
-            sus_movs += 1
-        if board[15] == player_id:
-            mis_movs += 1
-        elif board[15] == oponente:
-            sus_movs += 1
+        if board[7] == 0: # esquina arriba derecha
+            if board[6] == player_id:
+                mis_movs += 1
+            elif board[6] == oponente:
+                sus_movs += 1
+            if board[14] == player_id:
+                mis_movs += 1
+            elif board[14] == oponente:
+                sus_movs += 1
+            if board[15] == player_id:
+                mis_movs += 1
+            elif board[15] == oponente:
+                sus_movs += 1
 
-    if board[56] != 0: # esquina abajo izquierda
-        if board[48] == player_id:
-            mis_movs += 1
-        elif board[48] == oponente:
-            sus_movs += 1
-        if board[49] == player_id:
-            mis_movs += 1
-        elif board[49] == oponente:
-            sus_movs += 1
-        if board[57] == player_id:
-            mis_movs += 1
-        elif board[57] == oponente:
-            sus_movs += 1
+        if board[56] == 0: # esquina abajo izquierda
+            if board[48] == player_id:
+                mis_movs += 1
+            elif board[48] == oponente:
+                sus_movs += 1
+            if board[49] == player_id:
+                mis_movs += 1
+            elif board[49] == oponente:
+                sus_movs += 1
+            if board[57] == player_id:
+                mis_movs += 1
+            elif board[57] == oponente:
+                sus_movs += 1
 
-    if board[63] != 0: # esquina abajo derecha
-        if board[55] == player_id:
-            mis_movs += 1
-        elif board[55] == oponente:
-            sus_movs += 1
-        if board[62] == player_id:
-            mis_movs += 1
-        elif board[62] == oponente:
-            sus_movs += 1
-        if board[54] == player_id:
-            mis_movs += 1
-        elif board[54] == oponente:
-            sus_movs += 1
-    esq = -1.25 * (mis_movs - sus_movs)
+        if board[63] == 0: # esquina abajo derecha
+            if board[55] == player_id:
+                mis_movs += 1
+            elif board[55] == oponente:
+                sus_movs += 1
+            if board[62] == player_id:
+                mis_movs += 1
+            elif board[62] == oponente:
+                sus_movs += 1
+            if board[54] == player_id:
+                mis_movs += 1
+            elif board[54] == oponente:
+                sus_movs += 1
+        esq = -1.25 * (mis_movs - sus_movs)
+    else:
+        esq = 0
     new_score = score + (mobi) + (esq) + (frv_esq)
     return new_score
 
@@ -614,7 +619,7 @@ def apply_move(board, piece, player_id):
     return n_board
 
 
-s = socketIO_client.SocketIO(LOCAL, 3000)
+s = socketIO_client.SocketIO(SAMUEL, 3000)
 s.connect()
 s.emit('signin', {'user_name': "chiroy", 'tournament_id': TID, 'user_role': 'player'})
 
@@ -629,11 +634,13 @@ def elready(data):
     funcion que manda el siguiente tiro escogido
     en base a minimax
     """
+    print 'voy a calcular mi tiro'
     my_id = data['player_turn_id']
     g_id = data['game_id']
-    tiro_t = minimax(data['board'], my_id, True, 0, 5)
+    tiro_t = minimax(data['board'], my_id, True, 0, 4)
     s.emit('play', {'tournament_id': TID, 'player_turn_id': my_id, 'game_id': g_id, 'movement': tiro_t})
-
+    print 'voy a esperar mi siguiente turno'
+    print '--'
 
 def elfinish(data):
     """
@@ -650,5 +657,3 @@ s.on('ready', elready)
 s.on('finish', elfinish)
 
 s.wait()
-
-
